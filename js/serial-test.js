@@ -1,7 +1,7 @@
 document.getElementById("result").innerHTML = "Changed by JS"
 document.getElementById("btnConnect").addEventListener("click", getSerial)
 document.getElementById("btnMsg").addEventListener("click", writeSerial)
-document.getElementById("btnMsg").addEventListener("click", writeSerial2)
+document.getElementById("btnMsg2").addEventListener("click", writeSerial2)
 let writer;
 
 async function getSerial() {
@@ -48,10 +48,15 @@ async function getSerial() {
 }
 
 async function writeSerial(){
-    // const writer = outputStream.getWriter();
-    consele.log("write func 1");
+    console.log("write func 1");
     writer.write("hello from the web!\n");
-    writer.releaseLock();
+    // writer.releaseLock();
+}
+
+async function writeSerial2(){
+    console.log("write func 2");
+    writer.write("hello from func 2!\n");
+    // writer.releaseLock();
 }
 
 
