@@ -18,3 +18,8 @@ Text to display, up to 168 characters (plus a newline to terminate)
 Button Status
 
 "A0B1\n" if button A is not pressed, but button B is.
+
+
+TODO: 
+Send status when state of buttons change
+define protocol of sending status 
