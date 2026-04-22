@@ -5,8 +5,9 @@
 #define SCREEN_WIDTH 128 // OLED display width, in pixels
 #define SCREEN_HEIGHT 64 // OLED display height, in pixels
 
-// Arduino Uno
+#define BAUD_RATE 115200
 
+// Arduino Uno
 // Digital inputs
 #define BTN_A 7
 #define BTN_B 6
@@ -22,11 +23,12 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 #define CHARS_PER_LINE 21u // in font size 1
 #define LINES_PER_SCREEN 8u 
-char INPUT_BUF[CHARS_PER_LINE * LINES_PER_SCREEN]; // buffer for processing serial input, defines max message size
+#define CHARS_PER_SCREEN CHARS_PER_LINE * LINES_PER_SCREEN 
+char INPUT_BUF[CHARS_PER_SCREEN]; // buffer for processing serial input, defines max message size
 
 void setup() {
   // put your setup code here, to run once:
-  Serial.begin(9600);
+  Serial.begin(BAUD_RATE);
   delay(500); // wait for display
 
   clearInputBuf();
@@ -82,6 +84,9 @@ void setup() {
 byte btn_state = 0;
 byte prev_btn_state = 0;
 
+unsigned short x_val = 100;
+unsigned short y_val = 200;
+
 void loop() {
   // put your main code here, to run repeatedly:
   char c;
@@ -89,21 +94,23 @@ void loop() {
 
   while(1){
 
-    // if (1){
     if (Serial.available() > 0){
       // process received char
       c = Serial.read();
-      INPUT_BUF[index] = c; // save to message buffer
-      index++;
-      // if (1){
-      if (c == '\n'){ // on newline
-        // print to screen
+      if (index < sizeof(INPUT_BUF)){ // then it will fit
+        if (c != '\n'){
+          INPUT_BUF[index] = c; // save to message buffer unless newline, which triggers display
+          index++;
+        }
+      }
+      if (c == '\n'){
+          // print to screen
         printInputBuf();
         index = 0;
         clearInputBuf();
-      }
+      } 
     }
-    // bit 0
+    
     prev_btn_state = btn_state;
     btn_state = 0xfc; // all bits that aren't buttons are IDLE
     btn_state |= (digitalRead(BTN_A) << 0);  // active low buttons, 0 when pressed, 1 when idle 
@@ -111,8 +118,27 @@ void loop() {
     
     btn_state = ~btn_state; // invert to make status reporting active high
     if (btn_state != prev_btn_state) {
-      Serial.print(F("{\"btn_state\" :"));
-      Serial.print(btn_state, DEC);  
+      // Open JSON
+      Serial.print(F("{"));
+      Serial.print(F("\"screen\" : {\"type\" : \"txt\", \"w\" : 21, \"h\" : 8},"));
+      Serial.print(F("\"btn\" : {"));
+      Serial.print(F("\"A\" : "));
+      Serial.print((btn_state & (1<<0))>>0, DEC);
+      Serial.print(F(","));
+      Serial.print(F("\"B\" : "));
+      Serial.print((btn_state & (1<<1))>>1, DEC);
+      Serial.print(F("},"));
+      
+      Serial.print(F("\"analog\" : {"));
+      Serial.print(F("\"X\" : {\"val\" : "));
+      Serial.print(x_val, DEC);
+      Serial.print(F(", \"min\" : 0, \"max\" : 1023},"));
+      Serial.print(F("\"Y\" : {\"val\" : "));
+      Serial.print(y_val, DEC);
+      Serial.print(F(", \"min\" : 0, \"max\" : 1023}"));
+      Serial.print(F("}"));
+      
+      // close JSON
       Serial.println(F("}"));
     }
   }
@@ -121,7 +147,7 @@ void loop() {
 void printInputBuf(){
   display.clearDisplay();
   display.setCursor(0,0);             // Start at top-left corner (pixels)
-  display.println(INPUT_BUF); // text wraps automatically
+  display.print(INPUT_BUF); // text wraps automatically
   display.display();
 }
 
