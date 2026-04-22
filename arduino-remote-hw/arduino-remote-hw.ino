@@ -79,6 +79,9 @@ void setup() {
   display.display();
 }
 
+byte btn_state = 0;
+byte prev_btn_state = 0;
+
 void loop() {
   // put your main code here, to run repeatedly:
   char c;
@@ -96,28 +99,23 @@ void loop() {
       if (c == '\n'){ // on newline
         // print to screen
         printInputBuf();
-
-        // read digital IO and report status back (buttons are active-low)
-        if(digitalRead(BTN_A) == LOW){
-          Serial.print("A1");
-        } else {
-          Serial.print("A0");
-        }
-        if(digitalRead(BTN_B) == LOW){
-          Serial.print("B1");
-        } else {
-          Serial.print("B0");
-        }
-        // end return msg, clear buffer
-        Serial.println("");
         index = 0;
         clearInputBuf();
-        
-      } 
+      }
     }
-  
+    // bit 0
+    prev_btn_state = btn_state;
+    btn_state = 0xfc; // all bits that aren't buttons are IDLE
+    btn_state |= (digitalRead(BTN_A) << 0);  // active low buttons, 0 when pressed, 1 when idle 
+    btn_state |= (digitalRead(BTN_B) << 1);
+    
+    btn_state = ~btn_state; // invert to make status reporting active high
+    if (btn_state != prev_btn_state) {
+      Serial.print(F("{\"btn_state\" :"));
+      Serial.print(btn_state, DEC);  
+      Serial.println(F("}"));
+    }
   }
-  delay(1000); // Wait for 1 second
 }
 
 void printInputBuf(){
