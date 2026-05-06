@@ -9,12 +9,19 @@
 
 // Arduino Uno
 // Digital inputs
-#define BTN_A 7
-#define BTN_B 6
+#define BTN_A 2
+#define BTN_B 3
+#define BTN_C 4
+#define BTN_D 5
+#define BTN_E 6
+#define BTN_F 7
+// Analog inputs
+#define PIN_ANALOG_X 0
+#define PIN_ANALOG_Y  1
 
 // I2C to display
-// SDA A4
-// SCL A5
+// SDA A4 (orange)
+// SCL A5 (yellow)
 // SSD1306 I2C address 0x3C
 #define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
 #define SCREEN_ADDRESS 0x3C ///< See datasheet for Address; 0x3D for 128x64, 0x3C for 128x32
@@ -36,6 +43,11 @@ void setup() {
   // setup buttons as inputs
   pinMode(BTN_A, INPUT_PULLUP);
   pinMode(BTN_B, INPUT_PULLUP);
+  pinMode(BTN_C, INPUT_PULLUP);
+  pinMode(BTN_D, INPUT_PULLUP);
+  pinMode(BTN_E, INPUT_PULLUP);
+  pinMode(BTN_F, INPUT_PULLUP);
+
   
   // NOTE may want to skip display if not plugged in!
 
@@ -112,10 +124,17 @@ void loop() {
     }
     
     prev_btn_state = btn_state;
-    btn_state = 0xfc; // all bits that aren't buttons are IDLE
+    btn_state = 0xc0; // all bits that aren't buttons are IDLE
     btn_state |= (digitalRead(BTN_A) << 0);  // active low buttons, 0 when pressed, 1 when idle 
     btn_state |= (digitalRead(BTN_B) << 1);
+    btn_state |= (digitalRead(BTN_C) << 2);
+    btn_state |= (digitalRead(BTN_D) << 3);
+    btn_state |= (digitalRead(BTN_E) << 4);
+    btn_state |= (digitalRead(BTN_F) << 5);
     
+    x_val = analogRead(PIN_ANALOG_X);
+    y_val = analogRead(PIN_ANALOG_Y);
+
     btn_state = ~btn_state; // invert to make status reporting active high
     if (btn_state != prev_btn_state) {
       // Open JSON
@@ -127,15 +146,27 @@ void loop() {
       Serial.print(F(","));
       Serial.print(F("\"B\" : "));
       Serial.print((btn_state & (1<<1))>>1, DEC);
+      Serial.print(F(","));
+      Serial.print(F("\"C\" : "));
+      Serial.print((btn_state & (1<<2))>>2, DEC);
+      Serial.print(F(","));
+      Serial.print(F("\"D\" : "));
+      Serial.print((btn_state & (1<<3))>>3, DEC);
+      Serial.print(F(","));
+      Serial.print(F("\"E\" : "));
+      Serial.print((btn_state & (1<<4))>>4, DEC);
+      Serial.print(F(","));
+      Serial.print(F("\"F\" : "));
+      Serial.print((btn_state & (1<<5))>>5, DEC);
       Serial.print(F("},"));
       
       Serial.print(F("\"analog\" : {"));
       Serial.print(F("\"X\" : {\"val\" : "));
       Serial.print(x_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 1023},"));
+      Serial.print(F(", \"min\" : 0, \"max\" : 700},"));
       Serial.print(F("\"Y\" : {\"val\" : "));
       Serial.print(y_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 1023}"));
+      Serial.print(F(", \"min\" : 0, \"max\" : 700}"));
       Serial.print(F("}"));
       
       // close JSON
