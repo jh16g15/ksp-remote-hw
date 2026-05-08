@@ -19,6 +19,13 @@
 #define PIN_ANALOG_X 0
 #define PIN_ANALOG_Y  1
 
+// #define ENABLE_ANALOG_REPEAT
+#define ANALOG_MAX 1024ULL
+#define ANALOG_DEADZONE_PERCENT 5ULL
+#define ANALOG_DEADZONE_AMOUNT ANALOG_MAX * ANALOG_DEADZONE_PERCENT / 100ULL
+#define ANALOG_DEADZONE_UPPER (ANALOG_MAX / 2) + ANALOG_DEADZONE_AMOUNT
+#define ANALOG_DEADZONE_LOWER (ANALOG_MAX / 2) - ANALOG_DEADZONE_AMOUNT
+
 // I2C to display
 // SDA A4 (orange)
 // SCL A5 (yellow)
@@ -99,6 +106,8 @@ byte prev_btn_state = 0;
 unsigned short x_val = 100;
 unsigned short y_val = 200;
 
+byte first_time = 1;
+
 void loop() {
   // put your main code here, to run repeatedly:
   char c;
@@ -136,7 +145,13 @@ void loop() {
     y_val = analogRead(PIN_ANALOG_Y);
 
     btn_state = ~btn_state; // invert to make status reporting active high
-    if (btn_state != prev_btn_state) {
+    
+    #ifdef ENABLE_ANALOG_REPEAT
+    if (x_val > ANALOG_DEADZONE_UPPER || x_val < ANALOG_DEADZONE_LOWER || y_val > ANALOG_DEADZONE_UPPER || y_val < ANALOG_DEADZONE_LOWER || btn_state != prev_btn_state || first_time == 1){
+    #endif
+    #ifndef ENABLE_ANALOG_REPEAT
+    if (btn_state != prev_btn_state || first_time == 1) {
+    #endif
       // Open JSON
       Serial.print(F("{"));
       Serial.print(F("\"screen\" : {\"type\" : \"txt\", \"w\" : 21, \"h\" : 8},"));
@@ -163,14 +178,15 @@ void loop() {
       Serial.print(F("\"analog\" : {"));
       Serial.print(F("\"X\" : {\"val\" : "));
       Serial.print(x_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 700},"));
+      Serial.print(F(", \"min\" : 0, \"max\" : 1023},"));
       Serial.print(F("\"Y\" : {\"val\" : "));
       Serial.print(y_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 700}"));
+      Serial.print(F(", \"min\" : 0, \"max\" : 1023}"));
       Serial.print(F("}"));
       
       // close JSON
       Serial.println(F("}"));
+      first_time = 0;
     }
   }
 }
