@@ -20,9 +20,6 @@
 #define PIN_ANALOG_X 0
 #define PIN_ANALOG_Y  1
 
-//comment this out to not spam
-#define ENABLE_ANALOG_REPEAT
-
 #define ANALOG_MAX 1024ULL
 #define ANALOG_DEADZONE_AMOUNT 6
 #define ANALOG_DEADZONE_UPPER (ANALOG_MAX / 2) + ANALOG_DEADZONE_AMOUNT
@@ -140,15 +137,13 @@ void loop() {
     // Save previous state for looking for state change
     prev_btn_state = btn_state;
     prev_all_analog_in_deadzone = all_analog_in_deadzone;
-    
-    btn_state = 0xfe03; // all bits that aren't buttons are IDLE
-    btn_state |= (digitalRead(BTN_A) << BTN_A);  // active low buttons, 0 when pressed, 1 when idle 
-    btn_state |= (digitalRead(BTN_B) << BTN_B);
-    btn_state |= (digitalRead(BTN_C) << BTN_C);
-    btn_state |= (digitalRead(BTN_D) << BTN_D);
-    btn_state |= (digitalRead(BTN_E) << BTN_E);
-    btn_state |= (digitalRead(BTN_F) << BTN_F);
-    btn_state |= (digitalRead(BTN_K) << BTN_K);
+
+    // Load current state from I/O
+    // Buttons are active low, 1=IDLE, 0=PRESSED
+    btn_state = 0;
+    for(byte i=BTN_A;i<=BTN_K;i++){
+      btn_state |= digiReadAlign(i);
+    }
     
     x_val = analogRead(PIN_ANALOG_X);
     y_val = analogRead(PIN_ANALOG_Y);
@@ -156,12 +151,7 @@ void loop() {
     btn_state = ~btn_state; // invert to make status reporting active high
     all_analog_in_deadzone = !(x_val > ANALOG_DEADZONE_UPPER || x_val < ANALOG_DEADZONE_LOWER || y_val > ANALOG_DEADZONE_UPPER || y_val < ANALOG_DEADZONE_LOWER);
     
-    #ifdef ENABLE_ANALOG_REPEAT
     if (!all_analog_in_deadzone || !prev_all_analog_in_deadzone || btn_state != prev_btn_state || first_time == 1){
-    #endif
-    #ifndef ENABLE_ANALOG_REPEAT
-    if (btn_state != prev_btn_state || first_time == 1) {
-    #endif
       // Open JSON
       Serial.print(F("{"));
       Serial.print(F("\"screen\" : {\"type\" : \"txt\", \"w\" : 21, \"h\" : 8},"));
@@ -186,6 +176,10 @@ void loop() {
       first_time = 0;
     }
   }
+}
+
+unsigned short digiReadAlign(byte pin){
+  return digitalRead(pin) << pin;
 }
 
 void printButtonJSON(const char* input_name, byte pos, bool add_comma){
