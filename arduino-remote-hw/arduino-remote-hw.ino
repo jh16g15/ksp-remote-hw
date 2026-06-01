@@ -15,6 +15,7 @@
 #define BTN_D 5
 #define BTN_E 6
 #define BTN_F 7
+#define BTN_K 8
 // Analog inputs
 #define PIN_ANALOG_X 0
 #define PIN_ANALOG_Y  1
@@ -23,8 +24,7 @@
 #define ENABLE_ANALOG_REPEAT
 
 #define ANALOG_MAX 1024ULL
-#define ANALOG_DEADZONE_PERCENT 5ULL
-#define ANALOG_DEADZONE_AMOUNT ANALOG_MAX * ANALOG_DEADZONE_PERCENT / 100ULL
+#define ANALOG_DEADZONE_AMOUNT 6
 #define ANALOG_DEADZONE_UPPER (ANALOG_MAX / 2) + ANALOG_DEADZONE_AMOUNT
 #define ANALOG_DEADZONE_LOWER (ANALOG_MAX / 2) - ANALOG_DEADZONE_AMOUNT
 
@@ -56,7 +56,7 @@ void setup() {
   pinMode(BTN_D, INPUT_PULLUP);
   pinMode(BTN_E, INPUT_PULLUP);
   pinMode(BTN_F, INPUT_PULLUP);
-
+  pinMode(BTN_K, INPUT_PULLUP);
   
   // NOTE may want to skip display if not plugged in!
 
@@ -93,7 +93,7 @@ void setup() {
   }
   printInputBuf();
   clearInputBuf();
-  delay(1000); 
+  delay(250); 
   //*/ 
 
   display.clearDisplay();
@@ -102,8 +102,8 @@ void setup() {
   display.display();
 }
 
-byte btn_state = 0;
-byte prev_btn_state = 0;
+unsigned short btn_state = 0;
+unsigned short prev_btn_state = 0;
 
 byte all_analog_in_deadzone = 0;
 byte prev_all_analog_in_deadzone = 0;
@@ -141,13 +141,14 @@ void loop() {
     prev_btn_state = btn_state;
     prev_all_analog_in_deadzone = all_analog_in_deadzone;
     
-    btn_state = 0xc0; // all bits that aren't buttons are IDLE
-    btn_state |= (digitalRead(BTN_A) << 0);  // active low buttons, 0 when pressed, 1 when idle 
-    btn_state |= (digitalRead(BTN_B) << 1);
-    btn_state |= (digitalRead(BTN_C) << 2);
-    btn_state |= (digitalRead(BTN_D) << 3);
-    btn_state |= (digitalRead(BTN_E) << 4);
-    btn_state |= (digitalRead(BTN_F) << 5);
+    btn_state = 0xfe03; // all bits that aren't buttons are IDLE
+    btn_state |= (digitalRead(BTN_A) << BTN_A);  // active low buttons, 0 when pressed, 1 when idle 
+    btn_state |= (digitalRead(BTN_B) << BTN_B);
+    btn_state |= (digitalRead(BTN_C) << BTN_C);
+    btn_state |= (digitalRead(BTN_D) << BTN_D);
+    btn_state |= (digitalRead(BTN_E) << BTN_E);
+    btn_state |= (digitalRead(BTN_F) << BTN_F);
+    btn_state |= (digitalRead(BTN_K) << BTN_K);
     
     x_val = analogRead(PIN_ANALOG_X);
     y_val = analogRead(PIN_ANALOG_Y);
@@ -166,12 +167,13 @@ void loop() {
       Serial.print(F("\"screen\" : {\"type\" : \"txt\", \"w\" : 21, \"h\" : 8},"));
       Serial.print(F("\"btn\" : {"));
 
-      printButtonJSON("A", 0, true);
-      printButtonJSON("B", 1, true);
-      printButtonJSON("C", 2, true);
-      printButtonJSON("D", 3, true);
-      printButtonJSON("E", 4, true);
-      printButtonJSON("F", 5, false);
+      printButtonJSON("A", BTN_A, true);
+      printButtonJSON("B", BTN_B, true);
+      printButtonJSON("C", BTN_C, true);
+      printButtonJSON("D", BTN_D, true);
+      printButtonJSON("E", BTN_E, true);
+      printButtonJSON("F", BTN_F, true);
+      printButtonJSON("K", BTN_K, false);
       Serial.print(F("},"));
       
       Serial.print(F("\"analog\" : {"));
