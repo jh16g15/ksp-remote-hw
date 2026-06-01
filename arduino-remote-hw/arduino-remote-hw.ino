@@ -105,6 +105,9 @@ void setup() {
 byte btn_state = 0;
 byte prev_btn_state = 0;
 
+byte all_analog_in_deadzone = 0;
+byte prev_all_analog_in_deadzone = 0;
+
 unsigned short x_val = 100;
 unsigned short y_val = 200;
 
@@ -133,8 +136,11 @@ void loop() {
         clearInputBuf();
       } 
     }
-    
+
+    // Save previous state for looking for state change
     prev_btn_state = btn_state;
+    prev_all_analog_in_deadzone = all_analog_in_deadzone;
+    
     btn_state = 0xc0; // all bits that aren't buttons are IDLE
     btn_state |= (digitalRead(BTN_A) << 0);  // active low buttons, 0 when pressed, 1 when idle 
     btn_state |= (digitalRead(BTN_B) << 1);
@@ -147,9 +153,10 @@ void loop() {
     y_val = analogRead(PIN_ANALOG_Y);
 
     btn_state = ~btn_state; // invert to make status reporting active high
+    all_analog_in_deadzone = !(x_val > ANALOG_DEADZONE_UPPER || x_val < ANALOG_DEADZONE_LOWER || y_val > ANALOG_DEADZONE_UPPER || y_val < ANALOG_DEADZONE_LOWER);
     
     #ifdef ENABLE_ANALOG_REPEAT
-    if (x_val > ANALOG_DEADZONE_UPPER || x_val < ANALOG_DEADZONE_LOWER || y_val > ANALOG_DEADZONE_UPPER || y_val < ANALOG_DEADZONE_LOWER || btn_state != prev_btn_state || first_time == 1){
+    if (!all_analog_in_deadzone || !prev_all_analog_in_deadzone || btn_state != prev_btn_state || first_time == 1){
     #endif
     #ifndef ENABLE_ANALOG_REPEAT
     if (btn_state != prev_btn_state || first_time == 1) {
