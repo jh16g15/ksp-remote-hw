@@ -19,7 +19,9 @@
 #define PIN_ANALOG_X 0
 #define PIN_ANALOG_Y  1
 
+//comment this out to not spam
 #define ENABLE_ANALOG_REPEAT
+
 #define ANALOG_MAX 1024ULL
 #define ANALOG_DEADZONE_PERCENT 5ULL
 #define ANALOG_DEADZONE_AMOUNT ANALOG_MAX * ANALOG_DEADZONE_PERCENT / 100ULL
@@ -96,7 +98,7 @@ void setup() {
 
   display.clearDisplay();
   display.setCursor(0,0);             // Start at top-left corner (pixels)
-  display.println(F("Awaiting Telemetry..."));
+  display.println(F("Awaiting Telemetry...\nBaud Rate: 115200"));
   display.display();
 }
 
@@ -156,38 +158,45 @@ void loop() {
       Serial.print(F("{"));
       Serial.print(F("\"screen\" : {\"type\" : \"txt\", \"w\" : 21, \"h\" : 8},"));
       Serial.print(F("\"btn\" : {"));
-      Serial.print(F("\"A\" : "));
-      Serial.print((btn_state & (1<<0))>>0, DEC);
-      Serial.print(F(","));
-      Serial.print(F("\"B\" : "));
-      Serial.print((btn_state & (1<<1))>>1, DEC);
-      Serial.print(F(","));
-      Serial.print(F("\"C\" : "));
-      Serial.print((btn_state & (1<<2))>>2, DEC);
-      Serial.print(F(","));
-      Serial.print(F("\"D\" : "));
-      Serial.print((btn_state & (1<<3))>>3, DEC);
-      Serial.print(F(","));
-      Serial.print(F("\"E\" : "));
-      Serial.print((btn_state & (1<<4))>>4, DEC);
-      Serial.print(F(","));
-      Serial.print(F("\"F\" : "));
-      Serial.print((btn_state & (1<<5))>>5, DEC);
+
+      printButtonJSON("A", 0, true);
+      printButtonJSON("B", 1, true);
+      printButtonJSON("C", 2, true);
+      printButtonJSON("D", 3, true);
+      printButtonJSON("E", 4, true);
+      printButtonJSON("F", 5, false);
       Serial.print(F("},"));
       
       Serial.print(F("\"analog\" : {"));
-      Serial.print(F("\"X\" : {\"val\" : "));
-      Serial.print(x_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 1023},"));
-      Serial.print(F("\"Y\" : {\"val\" : "));
-      Serial.print(y_val, DEC);
-      Serial.print(F(", \"min\" : 0, \"max\" : 1023}"));
+      printAnalogJSON("X", x_val, true);
+      printAnalogJSON("Y", y_val, false);
       Serial.print(F("}"));
       
       // close JSON
       Serial.println(F("}"));
       first_time = 0;
     }
+  }
+}
+
+void printButtonJSON(const char* input_name, byte pos, bool add_comma){
+  Serial.print(F("\""));
+  Serial.print(input_name);
+  Serial.print(F("\" : "));
+  Serial.print((btn_state & (1<<pos))>>pos, DEC);
+  if (add_comma){
+    Serial.print(F(","));
+  }
+}
+
+void printAnalogJSON(const char* input_name, unsigned short val, bool add_comma){
+  Serial.print(F("\""));
+  Serial.print(input_name);
+  Serial.print(F("\" : {\"val\" : "));
+  Serial.print(val, DEC);
+  Serial.print(F(", \"min\" : 0, \"max\" : 1023}"));
+  if (add_comma){
+    Serial.print(F(","));
   }
 }
 
